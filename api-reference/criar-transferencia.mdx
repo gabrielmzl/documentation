@@ -9,22 +9,20 @@ description: "Realiza uma transferência PIX para uma chave"
 Este endpoint permite criar uma transferência PIX para qualquer chave PIX cadastrada no sistema brasileiro de pagamentos.
 
 <Warning>
-  Caso o campo `document` seja informado, será possível apenas realizar a transação para o CPF/CNPJ especificado. Se a transação for efetuada para uma chave PIX de outro documento, será enviado um webhook com o status `FAILED`.
+  Caso o campo `document` seja informado, será possível apenas realizar a
+  transação para o CPF/CNPJ especificado. Se a transação for efetuada para uma
+  chave PIX de outro documento, será enviado um webhook com o status `FAILED`.
 </Warning>
 
 ## Autenticação
 
 <ParamField header="Authorization" type="string" required>
-  Token Bearer obtido no endpoint de autenticação
-  
-  ```
-  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
-  ```
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
 </ParamField>
 
 <ParamField header="x-idempotency-key" type="string" required>
   Código único de idempotência (UUID) para evitar transferências duplicadas
-  
   **Importante:** Use um UUID único para cada operação
 </ParamField>
 
@@ -35,15 +33,12 @@ Este endpoint permite criar uma transferência PIX para qualquer chave PIX cadas
 </ParamField>
 
 <ParamField body="description" type="string" required>
-  Descrição da transferência
-  
-  Exemplo: "Pagamento a fornecedor"
+  Descrição da transferência Exemplo: "Pagamento a fornecedor"
 </ParamField>
 
 <ParamField body="amount" type="string" required>
-  Valor da transferência em centavos (500 = R$ 5,00)
-  
-  **Nota:** Enviado como string, não número
+  Valor da transferência em centavos (500 = R$ 5,00) **Nota:** Enviado como
+  string, não número
 </ParamField>
 
 <ParamField body="details" type="object" required>
@@ -61,6 +56,11 @@ Este endpoint permite criar uma transferência PIX para qualquer chave PIX cadas
     <ParamField body="details.key" type="string" required>
       Chave PIX do recebedor (pode ser CPF, CNPJ, e-mail, telefone ou chave aleatória)
     </ParamField>
+
+    <ParamField body="details.keyType" type="string" required>
+      Tipo da chave PIX do recebedor (pode ser CPF, CNPJ, EMAIL, PHONE ou EVP)
+    </ParamField>
+
   </Expandable>
 </ParamField>
 
@@ -79,33 +79,34 @@ curl -X POST https://api.pronttus.com.br/v1/banking/cash-out/pix \
       "name": "João Silva",
       "document": "12345678900",
       "key": "joao@example.com"
+      "keyType": "CPF"
     }
   }'
 ```
 
 ```javascript JavaScript
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const api = new PronttusAPI(clientId, clientSecret);
 
 const response = await api.makeRequest(
-  'https://api.pronttus.com.br/v1/banking/cash-out/pix',
+  "https://api.pronttus.com.br/v1/banking/cash-out/pix",
   {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'x-idempotency-key': uuidv4()
+      "Content-Type": "application/json",
+      "x-idempotency-key": uuidv4(),
     },
     body: JSON.stringify({
-      type: 'pix_key',
-      description: 'Pagamento a fornecedor',
-      amount: '500',
+      type: "pix_key",
+      description: "Pagamento a fornecedor",
+      amount: "500",
       details: {
-        name: 'João Silva',
-        document: '12345678900',
-        key: 'joao@example.com'
-      }
-    })
+        name: "João Silva",
+        document: "12345678900",
+        key: "joao@example.com",
+      },
+    }),
   }
 );
 
@@ -182,15 +183,16 @@ data = response.json()
 
 ## Tipos de Chave PIX Aceitos
 
-| Tipo | Formato | Exemplo |
-|------|---------|---------|
-| CPF | 11 dígitos | `12345678900` |
-| CNPJ | 14 dígitos | `12345678000190` |
-| E-mail | E-mail válido | `joao@example.com` |
-| Telefone | +55 + DDD + número | `+5511999999999` |
-| Aleatória | UUID | `a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8` |
+| Tipo      | Formato            | Exemplo                                |
+| --------- | ------------------ | -------------------------------------- |
+| CPF       | 11 dígitos         | `12345678900`                          |
+| CNPJ      | 14 dígitos         | `12345678000190`                       |
+| E-mail    | E-mail válido      | `joao@example.com`                     |
+| Telefone  | +55 + DDD + número | `+5511999999999`                       |
+| Aleatória | UUID               | `a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8` |
 
 <Warning>
-  Configure webhooks para receber notificações automáticas sobre o status da transferência. Veja a seção [Webhooks](/webhooks/introducao) para mais detalhes.
+  Configure webhooks para receber notificações automáticas sobre o status da
+  transferência. Veja a seção [Webhooks](/webhooks/introducao) para mais
+  detalhes.
 </Warning>
-
