@@ -8,7 +8,8 @@
     "dark": "#d69000"
   },
   "appearance": {
-    "default": "light"
+    "default": "light",
+    "strict": true
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -92,23 +93,6 @@
         "label": "Suporte",
         "href": "mailto:dev@pronttus.com.br"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.pronttus.com.br"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
     ]
   },
   "footer": {
