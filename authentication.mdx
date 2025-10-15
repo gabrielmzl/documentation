@@ -1,0 +1,169 @@
+---
+title: 'Autenticação'
+description: 'Aprenda como autenticar suas requisições na API da Pronttus'
+icon: 'key'
+---
+
+## Visão Geral
+
+A API da Pronttus usa **OAuth 2.0 com Bearer Tokens** para autenticação. Todas as requisições devem incluir um token de acesso válido no cabeçalho de autorização.
+
+<Info>
+  Os tokens de acesso têm validade de **5 minutos** (300 segundos). Após expirar, você precisará gerar um novo token.
+</Info>
+
+## Fluxo de Autenticação
+
+<Steps>
+  <Step title="Obter Credenciais">
+    Acesse o dashboard da Pronttus e gere suas credenciais na seção **Desenvolvedor**:
+    - `client_id`: Identificador único da sua aplicação
+    - `client_secret`: Chave secreta (mantenha em segurança)
+  </Step>
+
+  <Step title="Solicitar Token">
+    Use suas credenciais para obter um token de acesso
+  </Step>
+
+  <Step title="Usar Token">
+    Inclua o token em todas as requisições à API
+  </Step>
+
+  <Step title="Renovar Token">
+    Quando o token expirar, solicite um novo
+  </Step>
+</Steps>
+
+## Token de Autorização
+
+<ParamField path="grant_type" type="string" required>
+  Por enquanto aceita somente: client_credentials
+</ParamField>
+
+<ParamField path="client_id" type="string" required>
+  Identificador único da sua aplicação fornecido no dashboard
+</ParamField>
+
+<ParamField path="client_secret" type="string" required>
+  Chave secreta da sua aplicação. Nunca exponha em código cliente ou repositórios públicos
+</ParamField>
+
+### Endpoint
+
+```
+POST /v1/oauth/token
+```
+
+### Requisição
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.pronttus.com.br/v1/oauth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "client_credentials",
+    "client_id": "seu_client_id",
+    "client_secret": "seu_client_secret"
+  }'
+```
+
+</CodeGroup>
+
+### Resposta de Sucesso
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "expires_in": 300
+}
+```
+
+### Resposta de Erro
+
+```json
+{
+  "message": "Não autorizado.",
+  "error": "Unauthorized",
+  "statusCode": 401
+}
+```
+
+## Boas Práticas
+
+<AccordionGroup>
+  <Accordion icon="shield" title="Segurança">
+    - **Nunca** exponha suas credenciais em código cliente ou repositórios públicos
+    - Armazene credenciais em variáveis de ambiente
+    - Use HTTPS em todas as comunicações
+    - Implemente rate limiting no seu lado
+  </Accordion>
+
+  <Accordion icon="clock" title="Gerenciamento de Token">
+    - Implemente cache de token para evitar requisições desnecessárias
+    - Renove o token automaticamente antes da expiração
+    - Trate erros de expiração com retry automático
+  </Accordion>
+
+  <Accordion icon="code" title="Implementação">
+    - Centralize a lógica de autenticação em uma classe ou módulo
+    - Use interceptors HTTP para adicionar tokens automaticamente
+    - Implemente logging de erros de autenticação
+  </Accordion>
+</AccordionGroup>
+
+## Exemplo de Variáveis de Ambiente
+
+Nunca coloque credenciais diretamente no código. Use variáveis de ambiente:
+
+<CodeGroup>
+
+```bash .env
+PRONTTUS_CLIENT_ID=seu_client_id
+PRONTTUS_CLIENT_SECRET=seu_client_secret
+PRONTTUS_API_URL=https://api.pronttus.com.br/api/v1
+```
+
+```javascript JavaScript
+// Carregando variáveis de ambiente
+require('dotenv').config();
+
+const auth = new PronttusAuth(
+  process.env.PRONTTUS_CLIENT_ID,
+  process.env.PRONTTUS_CLIENT_SECRET
+);
+```
+
+```python Python
+# Carregando variáveis de ambiente
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client_id = os.getenv('PRONTTUS_CLIENT_ID')
+client_secret = os.getenv('PRONTTUS_CLIENT_SECRET')
+```
+
+</CodeGroup>
+
+## Próximos Passos
+
+<CardGroup cols={2}>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/webhooks/introducao"
+  >
+    Configure notificações em tempo real
+  </Card>
+  <Card
+    title="Criar Cobrança"
+    icon="money-bill-wave"
+    href="/api-reference/criar-cobranca"
+  >
+    Comece a receber pagamentos
+  </Card>
+</CardGroup>
+

@@ -1,80 +1,204 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Comece por Aqui'
+description: 'Configure sua integração com a Pronttus em poucos minutos'
+icon: 'rocket'
 ---
 
-## Get started in three steps
+## Início Rápido
 
-Get your documentation site running locally and make your first customization.
+Este guia vai te ajudar a fazer sua primeira integração com a API da Pronttus em menos de 5 minutos.
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Crie sua conta">
+    Acesse [app.pronttus.com.br/register](https://app.pronttus.com.br/register) e crie sua conta gratuitamente.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    Você precisará fornecer:
+    - E-mail corporativo
+    - CNPJ da empresa
+    - Dados do representante legal
+  </Step>
+
+  <Step title="Obtenha suas credenciais">
+    Após criar sua conta, acesse a seção **"Desenvolvedor"** no dashboard e gere suas credenciais de API:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```json
+    {
+      "client_id": "seu_client_id",
+      "client_secret": "seu_client_secret"
+    }
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Warning>
+      Mantenha suas credenciais em segurança. Nunca compartilhe ou exponha em repositórios públicos.
+    </Warning>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Obtenha seu token de acesso">
+    Use suas credenciais para gerar um token de autenticação:
+    
+    ```bash
+    curl -X POST https://api.pronttus.com.br/v1/oauth/token \
+      -H "Content-Type: application/json" \
+      -d '{
+        "grant_type": "client_credentials",
+        "client_id": "seu_client_id",
+        "client_secret": "seu_client_secret"
+      }'
+    ```
+    
+    Resposta:
+    ```json
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "token_type": "bearer",
+      "expires_in": 300
+    }
+    ```
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Faça sua primeira requisição">
+    Agora você está pronto para criar seu primeiro QR Code PIX:
+    
+    ```bash
+    curl -X POST https://api.pronttus.com.br/v1/banking/cash-in/pix \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer seu_access_token" \
+      -d '{
+        "amount": 10000,
+        "description": "Teste de integração",
+        "customer": {
+          "name": "João Silva",
+          "email": "joao@example.com",
+          "document": "12345678900",
+          "phone": "19999999999
+        }
+      }'
+    ```
+    
+    <Note>
+      O valor do `amount` é em centavos. Exemplo: R$ 100,00 = 10000
+    </Note>
+  </Step>
+</Steps>
 
-### Step 3: Go live
+## Exemplo de Integração Completa
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Aqui está um exemplo completo em Javascript:
 
-## Next steps
+<CodeGroup>
 
-Now that you have your docs running, explore these key features:
+```javascript Node.js
+const axios = require('axios');
+
+const BASE_URL = 'https://api.pronttus.com.br/v1';
+
+// 1. Obter token de autenticação
+async function getAuthToken() {
+  const response = await axios.post(`${BASE_URL}/oauth/token`, {
+    grant_type: 'client_credentials',
+    client_id: 'seu_client_id',
+    client_secret: 'seu_client_secret'
+  });
+  
+  return response.data.access_token;
+}
+
+// 2. Criar QR Code PIX
+async function createPixQRCode(token) {
+  const response = await axios.post(
+    `${BASE_URL}/banking/cash-in/pix`,
+    {
+      amount: 10000, // R$ 100,00
+      description: 'Pagamento de serviço',
+      customer: {
+        name: 'João Silva',
+        email: 'joao@example.com',
+        document: '12345678900',
+        phone: '19999999999'
+      }
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  
+  return response.data;
+}
+
+// Executar
+async function main() {
+  try {
+    const token = await getAuthToken();
+    const qrcode = await createPixQRCode(token);
+    
+    console.log('QR Code criado com sucesso!');
+    console.log('Código PIX:', qrcode.data.qrcode);
+  } catch (error) {
+    console.error('Erro:', error.response?.data || error.message);
+  }
+}
+
+main();
+```
+
+</CodeGroup>
+
+## Testando a Integração
+
+<Tip>
+  Use ferramentas como Postman ou Insomnia para testar os endpoints antes de implementar no código.
+</Tip>
+
+### Checklist de Integração
+
+<Check>Conta criada no dashboard</Check>
+<Check>Credenciais de API geradas</Check>
+<Check>Token de autenticação obtido com sucesso</Check>
+<Check>Primeira requisição realizada</Check>
+<Check>Webhook configurado (opcional, mas recomendado)</Check>
+
+## Próximos Passos
+
+Agora que você completou a configuração inicial, explore mais funcionalidades:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card
+    title="Autenticação"
+    icon="lock"
+    href="/authentication"
+  >
+    Entenda melhor o fluxo de autenticação
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/webhooks/introducao"
+  >
+    Configure notificações em tempo real
+  </Card>
+  <Card
+    title="Criar Cobrança"
+    icon="money-bill-wave"
+    href="/api-reference/criar-cobranca"
+  >
+    Crie cobranças PIX imediatas
+  </Card>
+  <Card
+    title="Criar Transferência"
+    icon="exchange"
+    href="/api-reference/criar-transferencia"
+  >
+    Aprenda a realizar transferências
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Suporte
+
+Encontrou algum problema? Estamos aqui para ajudar:
+
+- **E-mail**: dev@pronttus.com.br
+- **WhatsApp**: +55 (11) 99999-9999
+- **Horário**: Segunda a Sexta, 9h às 18h (BRT)

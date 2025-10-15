@@ -1,0 +1,181 @@
+---
+title: "Token de Autorização"
+api: "POST https://api.pronttus.com.br/v1/oauth/token"
+description: "Gera um token de acesso para autenticar requisições à API"
+---
+
+## Visão Geral
+
+Este endpoint gera um token de acesso OAuth 2.0 que deve ser usado para autenticar todas as requisições subsequentes à API da Pronttus.
+
+<Warning>
+  O token de acesso tem uma validade de **5 minutos** (300 segundos). Após esse período, será necessário gerar um novo token para continuar utilizando as APIs.
+</Warning>
+
+## Requisitos
+
+<Info>
+  Todas as requisições para a API da Pronttus:
+  - São **criptografadas** - não aceitamos requisições usando o protocolo HTTP, somente **HTTPS**
+  - O formato de comunicação é **JSON** - toda requisição com payload JSON deve conter o header `Content-Type: application/json`
+  - O token de acesso obtido deve ser passado no header `Authorization: Bearer {token}` de todas as requisições subsequentes
+</Info>
+
+<ParamField body="grant_type" type="string" required default="client_credentials">
+  Tipo de concessão OAuth 2.0. Por enquanto, apenas `client_credentials` é suportado.
+</ParamField>
+
+<ParamField body="client_id" type="string" required>
+  ID do cliente fornecido no dashboard da Pronttus
+</ParamField>
+
+<ParamField body="client_secret" type="string" required>
+  Segredo do cliente fornecido no dashboard da Pronttus. **Mantenha em segurança!**
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.pronttus.com.br/v1/oauth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "client_credentials",
+    "client_id": "your_client_id",
+    "client_secret": "your_client_secret"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.pronttus.com.br/v1/oauth/token', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    grant_type: 'client_credentials',
+    client_id: 'your_client_id',
+    client_secret: 'your_client_secret'
+  })
+});
+
+const data = await response.json();
+const token = data.access_token;
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.pronttus.com.br/v1/oauth/token',
+    json={
+        'grant_type': 'client_credentials',
+        'client_id': 'your_client_id',
+        'client_secret': 'your_client_secret'
+    }
+)
+
+data = response.json()
+token = data['access_token']
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...",
+  "token_type": "bearer",
+  "expires_in": 300
+}
+```
+
+```json Resposta de Erro
+{
+  "message": "Não autorizado.",
+  "error": "Unauthorized",
+  "statusCode": 401
+}
+```
+
+</ResponseExample>
+
+<ResponseField name="access_token" type="string">
+  Token JWT para autenticação nas próximas requisições
+</ResponseField>
+
+<ResponseField name="token_type" type="string">
+  Tipo do token (sempre `bearer`)
+</ResponseField>
+
+<ResponseField name="expires_in" type="integer">
+  Tempo de validade do token em segundos (300 = 5 minutos)
+</ResponseField>
+
+## Como Usar o Token
+
+Após obter o token, inclua-o no header `Authorization` de todas as requisições:
+
+```bash
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
+```
+
+## Renovação Automática
+
+Implemente lógica para renovar o token antes da expiração:
+
+```javascript
+class PronttusAPI {
+  constructor(clientId, clientSecret) {
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.token = null;
+    this.tokenExpiry = null;
+  }
+
+  async getToken() {
+    // Verifica se o token ainda é válido (com margem de 30s)
+    if (this.token && this.tokenExpiry > Date.now() + 30000) {
+      return this.token;
+    }
+
+    // Solicita novo token
+    const response = await fetch('https://api.pronttus.com.br/v1/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'client_credentials',
+        client_id: this.clientId,
+        client_secret: this.clientSecret
+      })
+    });
+
+    const data = await response.json();
+    this.token = data.access_token;
+    this.tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+    return this.token;
+  }
+
+  async makeRequest(url, options = {}) {
+    const token = await this.getToken();
+    
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
+}
+```
+
+## Erros Comuns
+
+| Código | Descrição | Solução |
+|--------|-----------|---------|
+| `401` | Credenciais inválidas | Verifique seu `client_id` e `client_secret` |
+| `401` | Token expirado | Gere um novo token |
+| `403` | Permissões insuficientes | Verifique as permissões da sua conta |
+

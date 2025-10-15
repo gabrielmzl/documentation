@@ -1,0 +1,661 @@
+---
+title: 'Webhooks'
+description: 'Receba notificações em tempo real sobre eventos na sua conta'
+icon: 'webhook'
+---
+
+## O que são Webhooks?
+
+Webhooks são mecanismos que permitem a comunicação automática entre sistemas. Sempre que um evento relevante ocorre na Pronttus (como uma transação, transferência, estorno ou infração), enviamos automaticamente uma requisição **HTTP POST** para uma URL previamente configurada por você.
+
+<Info>
+  Com webhooks, você não precisa fazer polling (consultas repetidas) para verificar o status das transações. Nós notificamos você automaticamente em tempo real.
+</Info>
+
+## Benefícios
+
+<CardGroup cols={2}>
+  <Card title="Tempo Real" icon="bolt">
+    Receba notificações instantâneas assim que os eventos ocorrem
+  </Card>
+  <Card title="Eficiência" icon="gauge-high">
+    Elimine a necessidade de consultas repetidas (polling)
+  </Card>
+  <Card title="Confiável" icon="shield-check">
+    Sistema de retry automático com até 3 tentativas
+  </Card>
+  <Card title="Seguro" icon="lock">
+    Autenticação via secret e headers customizáveis
+  </Card>
+</CardGroup>
+
+## Como Funciona
+
+<Steps>
+  <Step title="Configuração">
+    Você registra uma URL de webhook por tipo de operação (ex: Transferência, Recebimento, Estorno, Infrações) no dashboard da Pronttus
+  </Step>
+
+  <Step title="Assinatura de eventos">
+    Defina quais eventos específicos deseja receber em cada URL configurada
+  </Step>
+
+  <Step title="Disparo de evento">
+    Quando um evento ocorre, a Pronttus envia automaticamente uma requisição HTTP POST para a URL associada ao tipo
+  </Step>
+
+  <Step title="Processamento e resposta">
+    Sua aplicação processa o evento e deve retornar um HTTP 2XX (preferencialmente 200) em até 10 segundos para confirmar o recebimento
+  </Step>
+</Steps>
+
+## Configurando Webhooks
+
+### 1. Acesse o Dashboard
+
+Entre em [app.pronttus.com.br](https://app.pronttus.com.br) e navegue até a seção **Webhooks**.
+
+### 2. Configure por Tipo de Operação
+
+A Pronttus permite configurar webhooks específicos para cada categoria de operação:
+
+- **Transferências** - Envios PIX e TEDs
+- **Recebimentos** - Pagamentos e QR Codes PIX
+- **Estornos** - Devoluções e reembolsos
+- **Infrações** - Violações de regras PIX
+- **Débito/Crédito em conta** - Movimentações de saldo
+- **Outros eventos** - Operações futuras
+
+### 3. Personalize a Configuração
+
+Para cada webhook, você pode configurar:
+
+<AccordionGroup>
+  <Accordion icon="link" title="URL de Destino">
+    Endpoint HTTPS que receberá os eventos. **URLs HTTP não são aceitas por questões de segurança.**
+    
+    Exemplo: `https://api.sua-empresa.com/webhooks/pronttus`
+  </Accordion>
+
+  <Accordion icon="envelope" title="E-mail para Notificações">
+    Receba alertas automáticos quando houver falhas recorrentes na entrega de webhooks
+  </Accordion>
+
+  <Accordion icon="code" title="Headers Customizados">
+    Adicione headers personalizados para autenticação ou rastreamento
+    
+    Exemplo:
+    ```
+    Authorization: Bearer seu_token_secreto
+    X-Custom-Header: valor_personalizado
+    ```
+  </Accordion>
+
+  <Accordion icon="bell" title="Eventos Específicos">
+    Selecione exatamente quais eventos deseja receber para evitar notificações desnecessárias
+  </Accordion>
+
+  <Accordion icon="pause" title="Pausar Webhooks">
+    Pause manualmente o envio de webhooks ou configure pausa automática ao detectar falhas recorrentes
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  **Importante:** A URL deve ser HTTPS e retornar resposta em até **10 segundos** para evitar timeout e reprocessamento.
+</Warning>
+
+## Estrutura da Requisição
+
+Cada webhook é enviado via **HTTP POST** com os seguintes headers e corpo:
+
+### Headers Padrão
+
+```http
+POST /webhooks HTTP/1.1
+Host: sua-url.com
+Content-Type: application/json
+x-correlation-id: 550e8400-e29b-41d4-a716-446655440000
+x-webhook-secret: SEU_WEBHOOK_SECRET
+```
+
+<ParamField path="Content-Type" type="string">
+  Sempre `application/json`
+</ParamField>
+
+<ParamField path="x-correlation-id" type="string">
+  UUID único para rastreamento e identificação de reentregas. Use este campo para implementar idempotência
+</ParamField>
+
+<ParamField path="x-webhook-secret" type="string">
+  Secret configurado no dashboard para validação de autenticidade. **Sempre valide este header!**
+</ParamField>
+
+### Payload (Corpo da Requisição)
+
+```json
+{
+  "webhookId": "wh_a1b2c3d4e5f6",
+  "type": "transactions.receive",
+  "data": {
+    // Dados específicos do evento
+  }
+}
+```
+
+### Campos do Payload
+
+<ParamField path="webhookId" type="string">
+  Identificador único do webhook
+</ParamField>
+
+<ParamField path="type" type="string">
+  Tipo do evento (ex: `transactions.receive`, `transactions.transfer`, `transactions.chargeback`)
+</ParamField>
+
+<ParamField path="data" type="object">
+  Objeto contendo os dados específicos do evento. A estrutura varia conforme o tipo de evento
+</ParamField>
+
+## Exemplo de Implementação
+
+<CodeGroup>
+
+```javascript Node.js + Express
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+const WEBHOOK_SECRET = process.env.PRONTTUS_WEBHOOK_SECRET;
+
+// Armazenar IDs processados para idempotência
+const processedWebhooks = new Set();
+
+// Endpoint para receber webhooks
+app.post('/webhooks/pronttus', (req, res) => {
+  const webhookSecret = req.headers['x-webhook-secret'];
+  const correlationId = req.headers['x-correlation-id'];
+  const payload = req.body;
+
+  // Valida secret
+  if (webhookSecret !== WEBHOOK_SECRET) {
+    console.error('Secret inválido');
+    return res.status(401).send('Não autorizado');
+  }
+
+  // Implementa idempotência usando correlation-id
+  if (processedWebhooks.has(correlationId)) {
+    console.log('Webhook já processado:', correlationId);
+    return res.status(200).send('OK');
+  }
+
+  // Processa o evento
+  const { webhookId, type, data } = payload;
+
+  try {
+    switch (type) {
+      case 'transactions.receive':
+        console.log('Pagamento recebido:', data.transaction_id);
+        // Atualiza banco de dados, envia e-mail, etc.
+        break;
+
+      case 'transactions.transfer':
+        console.log('Transferência concluída:', data.transfer_id);
+        break;
+
+      case 'transactions.chargeback':
+        console.log('Estorno recebido:', data.chargeback_id);
+        break;
+
+      default:
+        console.log('Evento desconhecido:', type);
+    }
+
+    // Marca como processado
+    processedWebhooks.add(correlationId);
+
+    // IMPORTANTE: Retorna 200 para confirmar recebimento
+    res.status(200).json({ status: 'processed' });
+  } catch (error) {
+    console.error('Erro ao processar webhook:', error);
+    // Mesmo com erro, retorna 200 para evitar retry desnecessário
+    // se for um erro de lógica de negócio (não de infraestrutura)
+    res.status(200).json({ status: 'error', message: error.message });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Servidor rodando na porta 3000');
+});
+```
+
+```python Python + Flask
+from flask import Flask, request, jsonify
+import os
+
+app = Flask(__name__)
+
+WEBHOOK_SECRET = os.getenv('PRONTTUS_WEBHOOK_SECRET')
+
+# Armazenar IDs processados para idempotência
+processed_webhooks = set()
+
+@app.route('/webhooks/pronttus', methods=['POST'])
+def handle_webhook():
+    webhook_secret = request.headers.get('x-webhook-secret')
+    correlation_id = request.headers.get('x-correlation-id')
+    payload = request.json
+
+    # Valida secret
+    if webhook_secret != WEBHOOK_SECRET:
+        print('Secret inválido')
+        return jsonify({'error': 'Não autorizado'}), 401
+
+    # Implementa idempotência usando correlation-id
+    if correlation_id in processed_webhooks:
+        print(f'Webhook já processado: {correlation_id}')
+        return jsonify({'status': 'ok'}), 200
+
+    # Processa o evento
+    webhook_id = payload['webhookId']
+    event_type = payload['type']
+    data = payload['data']
+
+    try:
+        if event_type == 'transactions.receive':
+            print(f"Pagamento recebido: {data.get('transaction_id')}")
+            # Atualiza banco de dados, envia e-mail, etc.
+
+        elif event_type == 'transactions.transfer':
+            print(f"Transferência concluída: {data.get('transfer_id')}")
+
+        elif event_type == 'transactions.chargeback':
+            print(f"Estorno recebido: {data.get('chargeback_id')}")
+
+        else:
+            print(f"Evento desconhecido: {event_type}")
+
+        # Marca como processado
+        processed_webhooks.add(correlation_id)
+
+        # IMPORTANTE: Retorna 200 para confirmar recebimento
+        return jsonify({'status': 'processed'}), 200
+
+    except Exception as e:
+        print(f'Erro ao processar webhook: {e}')
+        # Mesmo com erro, retorna 200 para evitar retry desnecessário
+        return jsonify({'status': 'error', 'message': str(e)}), 200
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+
+```php PHP
+<?php
+
+$webhookSecret = getenv('PRONTTUS_WEBHOOK_SECRET');
+
+// Cache de IDs processados para idempotência (use Redis em produção)
+$cacheFile = sys_get_temp_dir() . '/processed_webhooks.txt';
+$processedWebhooks = file_exists($cacheFile) 
+    ? file($cacheFile, FILE_IGNORE_NEW_LINES) 
+    : [];
+
+// Recebe headers
+$secret = $_SERVER['HTTP_X_WEBHOOK_SECRET'] ?? '';
+$correlationId = $_SERVER['HTTP_X_CORRELATION_ID'] ?? '';
+
+// Valida secret
+if ($secret !== $webhookSecret) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Não autorizado']);
+    exit;
+}
+
+// Implementa idempotência
+if (in_array($correlationId, $processedWebhooks)) {
+    error_log("Webhook já processado: " . $correlationId);
+    http_response_code(200);
+    echo json_encode(['status' => 'ok']);
+    exit;
+}
+
+// Recebe e decodifica payload
+$payload = file_get_contents('php://input');
+$data = json_decode($payload, true);
+
+$webhookId = $data['webhookId'];
+$type = $data['type'];
+$eventData = $data['data'];
+
+// Processa o evento
+try {
+    switch ($type) {
+        case 'transactions.receive':
+            error_log("Pagamento recebido: " . $eventData['transaction_id']);
+            // Atualiza banco de dados, envia e-mail, etc.
+            break;
+
+        case 'transactions.transfer':
+            error_log("Transferência concluída: " . $eventData['transfer_id']);
+            break;
+
+        case 'transactions.chargeback':
+            error_log("Estorno recebido: " . $eventData['chargeback_id']);
+            break;
+
+        default:
+            error_log("Evento desconhecido: " . $type);
+    }
+
+    // Marca como processado
+    file_put_contents($cacheFile, $correlationId . PHP_EOL, FILE_APPEND);
+
+    // IMPORTANTE: Retorna 200 para confirmar recebimento
+    http_response_code(200);
+    echo json_encode(['status' => 'processed']);
+
+} catch (Exception $e) {
+    error_log("Erro ao processar webhook: " . $e->getMessage());
+    http_response_code(200);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+}
+?>
+```
+
+</CodeGroup>
+
+## Segurança e Validação
+
+### Validação do Webhook Secret
+
+**Sempre valide** o header `x-webhook-secret` antes de processar qualquer webhook:
+
+<Steps>
+  <Step title="Obtenha o Secret">
+    No dashboard da Pronttus, copie o **Webhook Secret** fornecido ao configurar cada webhook
+  </Step>
+
+  <Step title="Compare com o Header">
+    Valide se o valor do header `x-webhook-secret` corresponde ao secret configurado
+  </Step>
+
+  <Step title="Rejeite se Inválido">
+    Se o secret não corresponder, retorne HTTP 401 e não processe o evento
+  </Step>
+</Steps>
+
+```javascript
+const WEBHOOK_SECRET = process.env.PRONTTUS_WEBHOOK_SECRET;
+
+app.post('/webhooks/pronttus', (req, res) => {
+  const webhookSecret = req.headers['x-webhook-secret'];
+  
+  if (webhookSecret !== WEBHOOK_SECRET) {
+    return res.status(401).json({ error: 'Não autorizado' });
+  }
+  
+  // Processa o webhook...
+});
+```
+
+<Warning>
+  **Nunca exponha** o webhook secret em código cliente ou repositórios públicos. Use variáveis de ambiente.
+</Warning>
+
+## Retry e Resiliência
+
+### Política de Retry
+
+A Pronttus aplica retentativas automáticas quando a entrega de um webhook falha:
+
+<AccordionGroup>
+  <Accordion icon="rotate" title="Quando ocorrem retries?">
+    Erros **4XX** ou **5XX** acionam nova tentativa automaticamente
+  </Accordion>
+
+  <Accordion icon="clock" title="Quantas tentativas?">
+    Serão feitas **até 3 novas tentativas** em até **10 minutos**
+  </Accordion>
+
+  <Accordion icon="list-check" title="Reprocessamento Manual">
+    Eventos com falha ficam disponíveis para reprocessamento manual no painel da Pronttus
+  </Accordion>
+
+  <Accordion icon="envelope" title="Notificações">
+    Você receberá notificação por e-mail (se configurado) quando houver falhas recorrentes
+  </Accordion>
+</AccordionGroup>
+
+### Códigos de Resposta Esperados
+
+| Código | Descrição | Ação da Pronttus |
+|--------|-----------|------------------|
+| **2XX** | Evento recebido com sucesso | Webhook marcado como entregue |
+| **4XX** | Falha no envio (problema no seu endpoint) | Retry automático |
+| **5XX** | Falha no envio (servidor indisponível) | Retry automático |
+
+<Tip>
+  Retorne sempre **HTTP 200** (ou qualquer 2XX) para confirmar o recebimento, mesmo que ocorram erros de lógica de negócio no processamento.
+</Tip>
+
+### Idempotência
+
+Webhooks podem ser entregues mais de uma vez. **Implemente idempotência** usando o header `x-correlation-id`:
+
+```javascript
+// Exemplo de verificação de duplicidade usando correlation-id
+const processedWebhooks = new Set();
+
+app.post('/webhooks/pronttus', (req, res) => {
+  const correlationId = req.headers['x-correlation-id'];
+
+  // Verifica se já processou este webhook
+  if (processedWebhooks.has(correlationId)) {
+    console.log('Webhook já processado:', correlationId);
+    return res.status(200).send('OK');
+  }
+
+  // Processa e marca como processado
+  processWebhook(req.body);
+  processedWebhooks.add(correlationId);
+
+  res.status(200).send('OK');
+});
+```
+
+<Warning>
+  Use o `x-correlation-id` (não o `webhookId`) para implementar idempotência, pois o mesmo evento pode ter IDs diferentes em caso de reentrega.
+</Warning>
+
+## Boas Práticas
+
+<AccordionGroup>
+  <Accordion icon="clock" title="Responda em até 10 segundos">
+    Seu endpoint deve retornar status 200 **em até 10 segundos**. Processe operações demoradas de forma assíncrona.
+    
+    ```javascript
+    app.post('/webhooks/pronttus', async (req, res) => {
+      // Valida e retorna 200 imediatamente
+      if (isValidWebhook(req)) {
+        res.status(200).send('OK');
+        
+        // Processa de forma assíncrona (fila, worker, etc)
+        await queueWebhookProcessing(req.body);
+      }
+    });
+    ```
+  </Accordion>
+
+  <Accordion icon="shield-check" title="Use HTTPS obrigatoriamente">
+    Rejeite requisições não HTTPS. A Pronttus só envia webhooks para URLs HTTPS.
+    
+    - Configure certificado SSL válido
+    - Nunca aceite webhooks em URLs HTTP
+    - Use TLS 1.2 ou superior
+  </Accordion>
+
+  <Accordion icon="key" title="Autenticação via Header">
+    Utilize autenticação via header customizado para segurança adicional:
+    
+    ```javascript
+    // Configure no dashboard da Pronttus
+    Authorization: Bearer seu_token_secreto
+    
+    // Valide no seu endpoint
+    const authHeader = req.headers['authorization'];
+    if (authHeader !== 'Bearer seu_token_secreto') {
+      return res.status(401).send('Unauthorized');
+    }
+    ```
+  </Accordion>
+
+  <Accordion icon="fingerprint" title="Rastreamento com correlation-id">
+    Use o `x-correlation-id` para rastrear reentregas e debugar problemas:
+    
+    ```javascript
+    const correlationId = req.headers['x-correlation-id'];
+    console.log(`[${correlationId}] Processando webhook...`);
+    ```
+  </Accordion>
+
+  <Accordion icon="database" title="Armazene os Webhooks">
+    Salve todos os webhooks recebidos em um banco de dados para auditoria e reprocessamento.
+    
+    ```javascript
+    await db.webhooks.create({
+      correlation_id: req.headers['x-correlation-id'],
+      webhook_id: payload.webhookId,
+      type: payload.type,
+      payload: payload,
+      received_at: new Date()
+    });
+    ```
+  </Accordion>
+
+  <Accordion icon="bug" title="Trate Erros Corretamente">
+    Implemente try-catch robusto. Retorne 200 para erros de lógica de negócio, mas 5XX para erros de infraestrutura.
+    
+    ```javascript
+    app.post('/webhooks/pronttus', async (req, res) => {
+      try {
+        await processWebhook(req.body);
+        res.status(200).send('OK');
+      } catch (error) {
+        if (error.type === 'business_logic') {
+          // Erro de lógica - retorna 200 para não retriar
+          console.error('Erro de lógica:', error);
+          res.status(200).json({ error: error.message });
+        } else {
+          // Erro de infraestrutura - retorna 500 para retriar
+          console.error('Erro de infraestrutura:', error);
+          res.status(500).json({ error: 'Server error' });
+        }
+      }
+    });
+    ```
+  </Accordion>
+
+  <Accordion icon="chart-simple" title="Monitore e Alerte">
+    Configure alertas para webhooks que falham repetidamente:
+    
+    - Monitore taxa de sucesso/falha
+    - Alerte quando houver múltiplas falhas
+    - Verifique tempo de resposta
+    - Use APM (New Relic, Datadog, etc)
+  </Accordion>
+
+  <Accordion icon="circle-check" title="Implemente Idempotência">
+    **Sempre** implemente idempotência usando o `x-correlation-id` para evitar processar o mesmo evento múltiplas vezes:
+    
+    - Use banco de dados ou cache (Redis)
+    - Armazene o correlation-id dos eventos processados
+    - Verifique antes de processar
+    - Retorne 200 para eventos duplicados
+  </Accordion>
+</AccordionGroup>
+
+## Testando Webhooks Localmente
+
+Use ferramentas como **ngrok** para expor seu localhost durante o desenvolvimento:
+
+```bash
+# Instale o ngrok
+npm install -g ngrok
+
+# Exponha sua porta local
+ngrok http 3000
+
+# Use a URL HTTPS fornecida no dashboard da Pronttus
+# Exemplo: https://abc123.ngrok-free.app/webhooks/pronttus
+```
+
+<Tip>
+  O ngrok fornece uma URL HTTPS temporária que você pode usar para testar webhooks localmente sem precisar fazer deploy.
+</Tip>
+
+### Testando Manualmente
+
+Você pode testar seu endpoint manualmente com cURL:
+
+```bash
+curl -X POST https://seu-endpoint.com/webhooks/pronttus \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: SEU_SECRET" \
+  -H "x-correlation-id: test-123" \
+  -d '{
+    "webhookId": "test_webhook_123",
+    "type": "transactions.receive",
+    "data": {
+      "transaction_id": "txn_test_456",
+      "amount": 10000,
+      "status": "paid"
+    }
+  }'
+```
+
+## Ambiente Sandbox
+
+<Note>
+  O suporte a Webhooks no ambiente de **sandbox está em desenvolvimento**. Alguns eventos podem não estar disponíveis para testes ainda.
+  
+  Consulte nossa equipe de suporte para informações atualizadas sobre a disponibilidade de webhooks em sandbox.
+</Note>
+
+## Suporte e Ajuda
+
+Precisa de ajuda com webhooks? Nossa equipe está disponível:
+
+| Canal | Informação |
+|-------|------------|
+| **E-mail Técnico** | dev@pronttus.com.br |
+| **WhatsApp** | +55 (11) 99999-9999 |
+| **Horário** | Segunda a Sexta, 9h às 18h (BRT) |
+| **Dashboard** | [app.pronttus.com.br](https://app.pronttus.com.br) |
+
+<Warning>
+  Se você está enfrentando falhas recorrentes de entrega de webhooks, verifique:
+  - Seu endpoint está respondendo em até 10 segundos?
+  - O certificado SSL está válido?
+  - O firewall está permitindo requisições da Pronttus?
+  - Você está validando corretamente o `x-webhook-secret`?
+</Warning>
+
+## Próximos Passos
+
+<CardGroup cols={2}>
+  <Card
+    title="Tipos de Webhooks"
+    icon="list"
+    href="/webhooks/tipos-webhooks"
+  >
+    Veja todos os tipos de eventos disponíveis
+  </Card>
+  <Card
+    title="Criar Cobrança PIX"
+    icon="money-bill-wave"
+    href="/api-reference/criar-cobranca"
+  >
+    Crie cobranças PIX imediatas
+  </Card>
+</CardGroup>
+

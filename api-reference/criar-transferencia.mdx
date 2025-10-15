@@ -1,0 +1,196 @@
+---
+title: "Criar Transferência"
+api: "POST https://api.pronttus.com.br/v1/banking/cash-out/pix"
+description: "Realiza uma transferência PIX para uma chave"
+---
+
+## Visão Geral
+
+Este endpoint permite criar uma transferência PIX para qualquer chave PIX cadastrada no sistema brasileiro de pagamentos.
+
+<Warning>
+  Caso o campo `document` seja informado, será possível apenas realizar a transação para o CPF/CNPJ especificado. Se a transação for efetuada para uma chave PIX de outro documento, será enviado um webhook com o status `FAILED`.
+</Warning>
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação
+  
+  ```
+  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...
+  ```
+</ParamField>
+
+<ParamField header="x-idempotency-key" type="string" required>
+  Código único de idempotência (UUID) para evitar transferências duplicadas
+  
+  **Importante:** Use um UUID único para cada operação
+</ParamField>
+
+## Parâmetros do Body
+
+<ParamField body="type" type="string" required default="pix_key">
+  Tipo de transferência. Por enquanto, apenas `pix_key` é suportado
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Descrição da transferência
+  
+  Exemplo: "Pagamento a fornecedor"
+</ParamField>
+
+<ParamField body="amount" type="string" required>
+  Valor da transferência em centavos (500 = R$ 5,00)
+  
+  **Nota:** Enviado como string, não número
+</ParamField>
+
+<ParamField body="details" type="object" required>
+  Detalhes do destinatário
+  
+  <Expandable title="Campos do details">
+    <ParamField body="details.name" type="string" required>
+      Nome completo do recebedor
+    </ParamField>
+    
+    <ParamField body="details.document" type="string" required>
+      CPF ou CNPJ do recebedor (apenas números)
+    </ParamField>
+    
+    <ParamField body="details.key" type="string" required>
+      Chave PIX do recebedor (pode ser CPF, CNPJ, e-mail, telefone ou chave aleatória)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.pronttus.com.br/v1/banking/cash-out/pix \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -H "x-idempotency-key: bd07ea0c-1347-4830-a402-0a33ef3ab903" \
+  -d '{
+    "type": "pix_key",
+    "description": "Pagamento a fornecedor",
+    "amount": "500",
+    "details": {
+      "name": "João Silva",
+      "document": "12345678900",
+      "key": "joao@example.com"
+    }
+  }'
+```
+
+```javascript JavaScript
+const { v4: uuidv4 } = require('uuid');
+
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  'https://api.pronttus.com.br/v1/banking/cash-out/pix',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-idempotency-key': uuidv4()
+    },
+    body: JSON.stringify({
+      type: 'pix_key',
+      description: 'Pagamento a fornecedor',
+      amount: '500',
+      details: {
+        name: 'João Silva',
+        document: '12345678900',
+        key: 'joao@example.com'
+      }
+    })
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+import uuid
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json',
+    'x-idempotency-key': str(uuid.uuid4())
+}
+
+payload = {
+    'type': 'pix_key',
+    'description': 'Pagamento a fornecedor',
+    'amount': '500',
+    'details': {
+        'name': 'João Silva',
+        'document': '12345678900',
+        'key': 'joao@example.com'
+    }
+}
+
+response = requests.post(
+    'https://api.pronttus.com.br/v1/banking/cash-out/pix',
+    headers=headers,
+    json=payload
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "transactionId": "4c73de37-15e3-4bdb-bcad-83a906e2409e",
+  "amount": 500,
+  "status": "PROCESSING",
+  "createdAt": "2025-10-15T04:06:05.814Z",
+  "x-idempotency-key": "bd07ea0c-1347-4830-a402-0a33ef3ab903"
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="transactionId" type="string">
+  UUID único da transação gerada
+</ResponseField>
+
+<ResponseField name="amount" type="integer">
+  Valor da transferência em centavos
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status da transação: `PROCESSING`, `COMPLETED`, `FAILED`
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Data e hora de criação da transferência (ISO 8601)
+</ResponseField>
+
+<ResponseField name="x-idempotency-key" type="string">
+  Chave de idempotência utilizada
+</ResponseField>
+
+## Tipos de Chave PIX Aceitos
+
+| Tipo | Formato | Exemplo |
+|------|---------|---------|
+| CPF | 11 dígitos | `12345678900` |
+| CNPJ | 14 dígitos | `12345678000190` |
+| E-mail | E-mail válido | `joao@example.com` |
+| Telefone | +55 + DDD + número | `+5511999999999` |
+| Aleatória | UUID | `a1b2c3d4-e5f6-7890-g1h2-i3j4k5l6m7n8` |
+
+<Warning>
+  Configure webhooks para receber notificações automáticas sobre o status da transferência. Veja a seção [Webhooks](/webhooks/introducao) para mais detalhes.
+</Warning>
+

@@ -1,0 +1,246 @@
+---
+title: 'Tipos de Webhooks'
+description: 'Conheça todos os eventos disponíveis para notificação'
+icon: 'list'
+---
+
+## Visão Geral
+
+Este guia apresenta os diferentes cenários de payload que podem ser enviados via Webhook pela Pronttus, com base no tipo de operação configurado.
+
+<Info>
+  Cada tipo de evento é projetado para permitir integrações rápidas, rastreáveis e seguras. Certifique-se de validar o campo `event` e processar o payload conforme o tipo de operação.
+</Info>
+
+## Estrutura Padrão
+
+Todos os webhooks seguem esta estrutura base:
+
+```json
+{
+  "webhook_id": "string",
+  "event": "transactions.credit | transactions.debit",
+  "data": {
+    // Dados específicos do evento
+  }
+}
+```
+
+## Recebimento (Cash In)
+
+### `transactions.credit`
+
+Este evento é disparado quando há um **recebimento via PIX** na sua conta. O payload inclui detalhes da transação, dados do pagador e do recebedor.
+
+### Exemplo de Payload - Sucesso
+
+```json
+{
+  "webhook_id": "f8abc23c4c4d68c60e796353744c2a2892990ff09b97a37123d4c549882db483",
+  "event": "transactions.credit",
+  "data": {
+    "id": "740b60d5-9bf4-4a4d-901c-396ac860f573",
+    "status": "COMPLETED",
+    "amount": 5000,
+    "currency_code": "BRL",
+    "method": "pix",
+    "operation": "pix.cash_in",
+    "pix": {
+      "end_to_end_id": "E18236120202506220437s06b731c46a",
+      "tx_id": "522dfc1ec7418fae15af966aab4c7a"
+    },
+    "payer": {
+      "name": "John Doe",
+      "document": "12345678910",
+      "ispb": "00000001",
+      "account_number": "00000000000000000000",
+      "account_type": "00000000000000000000"
+    }
+  }
+}
+```
+
+### Campos do Payload
+
+<ParamField path="webhook_id" type="string">
+  Hash único do webhook para rastreamento
+</ParamField>
+
+<ParamField path="event" type="string">
+  Sempre `transactions.credit` para recebimentos
+</ParamField>
+
+<ParamField path="data.id" type="string">
+  UUID único da transação
+</ParamField>
+
+<ParamField path="data.status" type="string">
+  Status da transação: `COMPLETED`
+</ParamField>
+
+<ParamField path="data.amount" type="integer">
+  Valor em centavos (5000 = R$ 50,00)
+</ParamField>
+
+<ParamField path="data.currency_code" type="string">
+  Código da moeda: `BRL`
+</ParamField>
+
+<ParamField path="data.method" type="string">
+  Método de pagamento: `pix`
+</ParamField>
+
+<ParamField path="data.operation" type="string">
+  Tipo de operação: `pix.cash_in`
+</ParamField>
+
+<ParamField path="data.pix.end_to_end_id" type="string">
+  ID fim-a-fim do PIX (identificador único do Banco Central)
+</ParamField>
+
+<ParamField path="data.pix.tx_id" type="string">
+  ID da transação PIX
+</ParamField>
+
+<ParamField path="data.payer" type="object">
+  Dados completos do pagador (nome, documento, ISPB, conta)
+</ParamField>
+
+<Tip>
+  **Use este evento** para liberar produtos, enviar e-mails de confirmação, atualizar status de pedidos, etc.
+</Tip>
+
+---
+
+## Transferência (Cash Out)
+
+### `transactions.debit`
+
+Evento de **saída de valores** da conta. Representa um débito e contém os dados das contas envolvidas.
+
+### Exemplo de Payload - Sucesso
+
+```json
+{
+  "webhook_id": "84525845d10ead2473c4926b70fec85bb36ae983efe9e7c536de9d8472d1bb5c",
+  "event": "transactions.debit",
+  "data": {
+    "id": "07c21b7b-9ed5-4912-9022-462c5db6559a",
+    "status": "COMPLETED",
+    "amount": 15000,
+    "currency_code": "BRL",
+    "method": "pix",
+    "operation": "pix.cash_out",
+    "pix": {
+      "end_to_end_id": "E3186100520250622201431236a2aad6",
+      "tx_id": "PE202506220000356266"
+    },
+    "receiver": {
+      "name": "John Doe",
+      "document": "12345678910",
+      "ispb": "18236120",
+      "account_number": "00000000000000000000",
+      "account_type": "00000000000000000000"
+    }
+  }
+}
+```
+
+### Campos do Payload
+
+<ParamField path="event" type="string">
+  Sempre `transactions.debit` para transferências
+</ParamField>
+
+<ParamField path="data.status" type="string">
+  Status da transação: `COMPLETED` ou `FAILED`
+</ParamField>
+
+<ParamField path="data.operation" type="string">
+  Tipo de operação: `pix.cash_out`
+</ParamField>
+
+<ParamField path="data.receiver" type="object">
+  Dados completos do destinatário (nome, documento, ISPB, conta)
+</ParamField>
+
+<Note>
+  A estrutura é similar ao recebimento, mas usa `receiver` em vez de `payer` e o event é `transactions.debit`.
+</Note>
+
+---
+
+## Erro em Transferência (Cash Out Error)
+
+### `transactions.debit` com status `FAILED`
+
+Disparado quando há **falha no processo de transferência**, como saldo insuficiente ou chave PIX inválida.
+
+### Exemplo 1: Saldo Insuficiente
+
+```json
+{
+  "webhook_id": "84525845d10ead2473c4926b70fec85bb36ae983efe9e7c536de9d8472d1bb5c",
+  "event": "transactions.debit",
+  "data": {
+    "id": "07c21b7b-9ed5-4912-9022-462c5db6559a",
+    "status": "FAILED",
+    "amount": 15000,
+    "currency_code": "BRL",
+    "method": "pix",
+    "operation": "pix.cash_out",
+    "failure_reason": "Saldo insuficiente"
+  }
+}
+```
+
+### Exemplo 2: Chave PIX Não Encontrada
+
+```json
+{
+  "webhook_id": "84525845d10ead2473c4926b70fec85bb36ae983efe9e7c536de9d8472d1bb5c",
+  "event": "transactions.debit",
+  "data": {
+    "id": "07c21b7b-9ed5-4912-9022-462c5db6559a",
+    "status": "FAILED",
+    "amount": 15000,
+    "currency_code": "BRL",
+    "method": "pix",
+    "operation": "pix.cash_out",
+    "failure_reason": "Chave Pix não encontrada"
+  }
+}
+```
+
+### Campos de Erro
+
+<ParamField path="data.status" type="string">
+  Sempre `FAILED` para transações com erro
+</ParamField>
+
+<ParamField path="data.failure_reason" type="string">
+  Descrição legível do motivo da falha
+</ParamField>
+
+<Warning>
+  Quando o status é `FAILED`, os campos `pix` e `receiver` podem não estar presentes no payload.
+</Warning>
+
+## Próximos Passos
+
+<CardGroup cols={2}>
+  <Card
+    title="Webhooks - Introdução"
+    icon="webhook"
+    href="/webhooks/introducao"
+  >
+    Voltar para introdução aos webhooks
+  </Card>
+  <Card
+    title="Criar Cobrança PIX"
+    icon="qrcode"
+    href="/api-reference/criar-cobranca"
+  >
+    Crie cobranças PIX imediatas
+  </Card>
+</CardGroup>

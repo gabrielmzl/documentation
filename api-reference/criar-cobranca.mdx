@@ -1,0 +1,180 @@
+---
+title: "Criar Cobrança Imediata"
+api: "POST https://api.pronttus.com.br/v1/banking/cash-in/pix"
+description: "Cria uma cobrança PIX imediata com QR Code"
+---
+
+## Visão Geral
+
+Este endpoint é responsável por criar uma cobrança PIX imediata, gerando um QR Code que pode ser escaneado pelo cliente para realizar o pagamento.
+
+<Info>
+  A cobrança PIX é gerada instantaneamente e fica aguardando o pagamento até
+  expirar.
+</Info>
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+## Parâmetros do Body
+
+<ParamField body="amount" type="integer" required>
+  Valor da cobrança em centavos (500 = R$ 5,00) Exemplo: `500` para R$ 5,00
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Descrição da cobrança que aparecerá para o cliente Exemplo: "Pagamento de
+  produto"
+</ParamField>
+
+<ParamField body="customer" type="object" required>
+  Dados do cliente que realizará o pagamento
+  <Expandable title="Campos do customer">
+    <ParamField body="customer.name" type="string" required>
+      Nome completo do cliente
+    </ParamField>
+
+    <ParamField body="customer.document" type="string" required>
+      CPF ou CNPJ do cliente (apenas números)
+    </ParamField>
+
+    <ParamField body="customer.email" type="string" required>
+      E-mail do cliente
+    </ParamField>
+
+    <ParamField body="customer.phone" type="string" required>
+      Telefone do cliente com DDD (apenas números)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="externalId" type="string">
+  ID da sua aplicação para identificação e rastreamento
+</ParamField>
+
+<ParamField body="expiration" type="integer" default="86400">
+  Tempo de expiração da cobrança em segundos (padrão: 86400 = 24 horas)
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.pronttus.com.br/v1/banking/cash-in/pix \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -d '{
+    "amount": 500,
+    "description": "Pagamento de produto",
+    "customer": {
+      "name": "João Silva",
+      "document": "12345678900",
+      "email": "joao@example.com",
+      "phone": "11999999999"
+    },
+    "externalId": "ORDER_12345",
+    "expiration": 3600
+  }'
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/banking/cash-in/pix",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: 500,
+      description: "Pagamento de produto",
+      customer: {
+        name: "João Silva",
+        document: "12345678900",
+        email: "joao@example.com",
+        phone: "11999999999",
+      },
+      externalId: "ORDER_12345",
+      expiration: 3600,
+    }),
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+payload = {
+    'amount': 500,
+    'description': 'Pagamento de produto',
+    'customer': {
+        'name': 'João Silva',
+        'document': '12345678900',
+        'email': 'joao@example.com',
+        'phone': '11999999999'
+    },
+    'externalId': 'ORDER_12345',
+    'expiration': 3600
+}
+
+response = requests.post(
+    'https://api.pronttus.com.br/v1/banking/cash-in/pix',
+    headers=headers,
+    json=payload
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "transactionId": "6d2fd101-7dae-4259-bcf0-b8851c9868fb",
+  "amount": 500,
+  "status": "WAITING_PAYMENT",
+  "pixCode": "00020101021226840014br.gov.bcb.pix2562qrcode.pronttus.com.br/pix/095B80A4B3FD45EBA43B169811D2FC5F5204000053039865802BR5925Pronttus Payment Solution6010PIRACICABA62070503***630409FB",
+  "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOQAAADkCAYAAACIV4iNAAAAAklEQVR4AewaftIAAAxgSURBV...",
+  "createdAt": "2025-10-15T04:01:34.762Z"
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="transactionId" type="string">
+  UUID único da transação gerada
+</ResponseField>
+
+<ResponseField name="amount" type="integer">
+  Valor da cobrança em centavos
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status da cobrança: `WAITING_PAYMENT`, `PAID`, `EXPIRED`, `CANCELLED`
+</ResponseField>
+
+<ResponseField name="pixCode" type="string">
+  Código PIX copia e cola (string EMV) que pode ser usado pelo cliente
+</ResponseField>
+
+<ResponseField name="qrCode" type="string">
+  Imagem do QR Code em base64 pronta para exibição
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Data e hora de criação da cobrança (ISO 8601)
+</ResponseField>
