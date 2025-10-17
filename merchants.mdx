@@ -9,47 +9,59 @@ icon: "users"
 Os **Merchants** são subcontas gráficas que permitem separar o dinheiro quando você tem múltiplos clientes, mas mantendo tudo na mesma conta principal. Com os merchants, você consegue organizar melhor seus recebimentos através de wallets específicas com split nas transações.
 
 <Info>
-  Os merchants funcionam como "subcontas" dentro da sua conta principal, permitindo separação organizacional dos recebimentos sem criar contas bancárias separadas.
+  Os merchants funcionam como "subcontas" dentro da sua conta principal,
+  permitindo separação organizacional dos recebimentos sem criar contas
+  bancárias separadas.
 </Info>
 
 ## Conceitos Importantes
 
 ### Merchants vs Conta Principal
+
 - **Conta Principal**: Sua conta na Pronttus onde todos os valores são centralizados
 - **Merchants**: Subcontas gráficas para organização interna
 - **Wallets**: Carteiras específicas dentro de cada merchant para controle de saldo
 
 ### Split de Transações
+
 Com merchants ativados, você pode configurar splits nas transações para:
+
 - Dividir valores entre diferentes merchants
 - Controlar percentuais ou valores fixos
 - Organizar recebimentos por cliente/projeto
 
 <Warning>
-  Para ativar a funcionalidade de split nas transações, é necessário contatar o suporte da Pronttus.
+  Para ativar a funcionalidade de split nas transações, é necessário contatar o
+  suporte da Pronttus.
 </Warning>
 
 ## Casos de Uso
 
 ### E-commerce com Múltiplos Vendedores
+
 Crie um merchant para cada vendedor da sua plataforma e configure splits automáticos nas vendas.
 
 **Exemplo**: Marketplace onde você cobra 15% de comissão
+
 - Vendedor recebe: 85% do valor
 - Plataforma recebe: 15% de comissão
 
 ### Marketplace
+
 Organize recebimentos por categoria de produto ou região usando merchants diferentes.
 
 **Exemplo**: Plataforma com diferentes categorias
+
 - Merchant "Eletrônicos"
-- Merchant "Roupas" 
+- Merchant "Roupas"
 - Merchant "Casa e Jardim"
 
 ### Franquias
+
 Separe recebimentos por unidade franqueada mantendo controle centralizado.
 
 **Exemplo**: Rede de restaurantes
+
 - Merchant "Unidade Centro"
 - Merchant "Unidade Shopping"
 - Merchant "Unidade Aeroporto"
@@ -62,7 +74,7 @@ Separe recebimentos por unidade franqueada mantendo controle centralizado.
 Conta Principal (Pronttus)
 ├── Merchant "Vendedor A"
 │   └── Wallet Principal (Saldo: R$ 850,00)
-├── Merchant "Vendedor B" 
+├── Merchant "Vendedor B"
 │   └── Wallet Principal (Saldo: R$ 1.200,00)
 └── Merchant "Comissões"
     └── Wallet Principal (Saldo: R$ 300,00)
@@ -80,6 +92,7 @@ Conta Principal (Pronttus)
 ### Tipos de Split
 
 #### Split Fixo (`FIXED`)
+
 Divide um valor específico em centavos para uma wallet.
 
 ```json
@@ -91,12 +104,13 @@ Divide um valor específico em centavos para uma wallet.
 ```
 
 #### Split Percentual (`PERCENTAGE`)
+
 Divide uma porcentagem do valor total da transação.
 
 ```json
 {
   "amount": 15,
-  "mode": "PERCENTAGE", 
+  "mode": "PERCENTAGE",
   "wallet_id": "660e8400-e29b-41d4-a716-446655440001"
 }
 ```
@@ -108,22 +122,16 @@ Para uma transação de R$ 100,00 (10000 centavos) com split:
 ```json
 {
   "amount": 10000,
-  "split": [
-    {
-      "amount": 2000,
-      "mode": "FIXED",
-      "wallet_id": "wallet-vendedor-1"
-    },
-    {
-      "amount": 10,
-      "mode": "PERCENTAGE",
-      "wallet_id": "wallet-comissao"
-    }
-  ]
+  "split": {
+    "amount": 2000,
+    "mode": "FIXED",
+    "wallet_id": "wallet-vendedor-1"
+  }
 }
 ```
 
 **Resultado:**
+
 - Wallet do vendedor: R$ 20,00 (fixo)
 - Wallet de comissão: R$ 10,00 (10% de R$ 100,00)
 - Conta principal: R$ 70,00 (restante)
@@ -137,17 +145,18 @@ Para uma transação de R$ 100,00 (10000 centavos) com split:
     Cada merchant terá suas próprias wallets para controle de saldo.
   </Step>
 
-  <Step title="Configurar Split">
-    Nas transações, configure o array `split` para dividir valores automaticamente.
-    
-    Você pode usar valores fixos ou percentuais conforme necessário.
-  </Step>
+{" "}
+<Step title="Configurar Split">
+  Nas transações, configure o objeto `split` para dividir valores
+  automaticamente. Você pode usar valores fixos ou percentuais conforme
+  necessário.
+</Step>
 
-  <Step title="Monitorar Saldos">
-    Use o endpoint de saldo para acompanhar os valores em cada merchant.
-    
-    Configure webhooks para receber notificações de transações.
-  </Step>
+{" "}
+<Step title="Monitorar Saldos">
+  Use o endpoint de saldo para acompanhar os valores em cada merchant. Configure
+  webhooks para receber notificações de transações.
+</Step>
 
   <Step title="Gerenciar Saques">
     Quando necessário, transfira valores das wallets dos merchants para sua conta principal.
@@ -159,16 +168,19 @@ Para uma transação de R$ 100,00 (10000 centavos) com split:
 ## Benefícios
 
 ### Organização Financeira
+
 - Separação clara de recebimentos por cliente/projeto
 - Controle granular de saldos
 - Relatórios detalhados por merchant
 
 ### Flexibilidade
+
 - Splits automáticos nas transações
 - Configuração por valor fixo ou percentual
 - Múltiplos splits na mesma transação
 
 ### Escalabilidade
+
 - Suporte a centenas de merchants
 - APIs otimizadas para alto volume
 - Webhooks para automação
@@ -176,26 +188,25 @@ Para uma transação de R$ 100,00 (10000 centavos) com split:
 ## Limitações e Considerações
 
 ### Ativação Necessária
+
 - Funcionalidade de split precisa ser ativada pelo suporte
 - Entre em contato para habilitar em sua conta
 
 ### Validações
+
 - Soma dos splits não pode exceder o valor total
 - Wallet IDs devem ser válidos e existentes
 - Valores devem estar dentro dos limites permitidos
 
 ### Custos
+
 - Consulte com o suporte sobre tarifas específicas
 - Pode haver custos adicionais para funcionalidades avançadas
 
 ## Próximos Passos
 
 <CardGroup cols={2}>
-  <Card
-    title="Referência da API"
-    icon="code"
-    href="/api-reference/merchants"
-  >
+  <Card title="Referência da API" icon="code" href="/api-reference/criar-merchant">
     Veja todos os endpoints disponíveis
   </Card>
   <Card
@@ -212,11 +223,7 @@ Para uma transação de R$ 100,00 (10000 centavos) com split:
   >
     Como usar split nas transações
   </Card>
-  <Card
-    title="Webhooks"
-    icon="webhook"
-    href="/webhooks/introducao"
-  >
+  <Card title="Webhooks" icon="webhook" href="/webhooks/introducao">
     Configure notificações automáticas
   </Card>
 </CardGroup>
