@@ -49,6 +49,7 @@ Este endpoint é responsável por criar uma cobrança PIX imediata, gerando um Q
     <ParamField body="customer.phone" type="string" required>
       Telefone do cliente com DDD (apenas números)
     </ParamField>
+
   </Expandable>
 </ParamField>
 
@@ -58,6 +59,28 @@ Este endpoint é responsável por criar uma cobrança PIX imediata, gerando um Q
 
 <ParamField body="expiration" type="integer" default="86400">
   Tempo de expiração da cobrança em segundos (padrão: 86400 = 24 horas)
+</ParamField>
+
+<ParamField body="split" type="array">
+  Array de objetos para divisão do valor da transação entre diferentes wallets
+  <Expandable title="Campos do split">
+    <ParamField body="split[].amount" type="integer" required>
+      Valor da divisão em centavos (deve ser maior que 0 e menor que 100.000.000)
+    </ParamField>
+
+    <ParamField body="split[].mode" type="string" required>
+      Modo da divisão: `PERCENTAGE` (percentual) ou `FIXED` (valor fixo)
+    </ParamField>
+
+    <ParamField body="split[].wallet_id" type="string" required>
+      UUID da carteira do destinatário (deve ser um UUID válido)
+    </ParamField>
+
+  </Expandable>
+  
+  <Warning>
+    A funcionalidade de split precisa ser ativada pelo suporte da Pronttus. Entre em contato para habilitar esta funcionalidade.
+  </Warning>
 </ParamField>
 
 <RequestExample>
@@ -76,7 +99,12 @@ curl -X POST https://api.pronttus.com.br/v1/banking/cash-in/pix \
       "phone": "11999999999"
     },
     "externalId": "ORDER_12345",
-    "expiration": 3600
+    "expiration": 3600,
+    "split": {
+        "amount": 100,
+        "mode": "FIXED",
+        "wallet_id": "550e8400-e29b-41d4-a716-446655440000"
+      }
   }'
 ```
 
@@ -99,6 +127,11 @@ const response = await api.makeRequest(
       },
       externalId: "ORDER_12345",
       expiration: 3600,
+      split: {
+        amount: 100,
+        mode: "FIXED",
+        wallet_id: "550e8400-e29b-41d4-a716-446655440000",
+      },
     }),
   }
 );
@@ -124,7 +157,12 @@ payload = {
         'phone': '11999999999'
     },
     'externalId': 'ORDER_12345',
-    'expiration': 3600
+    'expiration': 3600,
+    'split': {
+            'amount': 100,
+            'mode': 'FIXED',
+            'wallet_id': '550e8400-e29b-41d4-a716-446655440000'
+        },
 }
 
 response = requests.post(
@@ -152,6 +190,73 @@ data = response.json()
 ```
 
 </ResponseExample>
+
+## Split de Transações
+
+O objeto `split` permite dividir o valor da transação entre diferentes wallets de merchants. Esta funcionalidade é ideal para:
+
+- **Marketplaces**: Dividir comissões entre vendedores
+- **Franquias**: Separar recebimentos por unidade
+- **E-commerce**: Distribuir valores entre diferentes contas
+
+### Tipos de Split
+
+#### Split Fixo (`FIXED`)
+
+Divide um valor específico em centavos para uma wallet.
+
+```json
+{
+  "amount": 1000,
+  "mode": "FIXED",
+  "wallet_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+#### Split Percentual (`PERCENTAGE`)
+
+Divide uma porcentagem do valor total da transação.
+
+```json
+{
+  "amount": 15,
+  "mode": "PERCENTAGE",
+  "wallet_id": "660e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+### Exemplo Prático
+
+Para uma transação de R$ 100,00 (10000 centavos) com split:
+
+```json
+{
+  "amount": 10000,
+  "split": [
+    {
+      "amount": 2000,
+      "mode": "FIXED",
+      "wallet_id": "wallet-vendedor-1"
+    },
+    {
+      "amount": 10,
+      "mode": "PERCENTAGE",
+      "wallet_id": "wallet-comissao"
+    }
+  ]
+}
+```
+
+**Resultado:**
+
+- Wallet do vendedor: R$ 20,00 (fixo)
+- Wallet de comissão: R$ 10,00 (10% de R$ 100,00)
+- Conta principal: R$ 70,00 (restante)
+
+<Warning>
+  A funcionalidade de split precisa ser ativada pelo suporte da Pronttus. Entre
+  em contato para habilitar esta funcionalidade.
+</Warning>
 
 ## Campos da Resposta
 

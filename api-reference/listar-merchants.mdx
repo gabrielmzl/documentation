@@ -1,0 +1,154 @@
+---
+title: "Listar Merchants"
+api: "GET https://api.pronttus.com.br/v1/merchants"
+description: "Lista todos os merchants com paginação"
+---
+
+## Visão Geral
+
+Este endpoint permite listar todos os merchants criados na sua conta com suporte a paginação e filtros.
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+## Parâmetros de Query
+
+<ParamField query="page" type="integer" default="1">
+  Número da página para paginação
+</ParamField>
+
+<ParamField query="limit" type="integer" default="10">
+  Quantidade de merchants por página (máximo: 100)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filtrar por status: `ACTIVE`, `INACTIVE`, `SUSPENDED`
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.pronttus.com.br/v1/merchants?page=1&limit=10" \
+  -H "Authorization: Bearer seu_token"
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/merchants?page=1&limit=10",
+  {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.pronttus.com.br/v1/merchants?page=1&limit=10',
+    headers=headers
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "data": [
+    {
+      "merchantId": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "João da Silva",
+      "document": "12345678901",
+      "document_type": "CPF",
+      "email": "joao@email.com",
+      "phone": "11999999999",
+      "status": "ACTIVE",
+      "createdAt": "2025-01-15T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="data" type="array">
+  Array com os merchants encontrados
+</ResponseField>
+
+<ResponseField name="data[].merchantId" type="string">
+  UUID único do merchant
+</ResponseField>
+
+<ResponseField name="data[].name" type="string">
+  Nome do merchant
+</ResponseField>
+
+<ResponseField name="data[].document" type="string">
+  CPF ou CNPJ do merchant
+</ResponseField>
+
+<ResponseField name="data[].document_type" type="string">
+  Tipo do documento: `CPF` ou `CNPJ`
+</ResponseField>
+
+<ResponseField name="data[].email" type="string">
+  E-mail do merchant
+</ResponseField>
+
+<ResponseField name="data[].phone" type="string">
+  Telefone do merchant
+</ResponseField>
+
+<ResponseField name="data[].status" type="string">
+  Status do merchant: `ACTIVE`, `INACTIVE`, `SUSPENDED`
+</ResponseField>
+
+<ResponseField name="data[].createdAt" type="string">
+  Data de criação (ISO 8601)
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Informações de paginação
+</ResponseField>
+
+<ResponseField name="pagination.page" type="integer">
+  Página atual
+</ResponseField>
+
+<ResponseField name="pagination.limit" type="integer">
+  Limite por página
+</ResponseField>
+
+<ResponseField name="pagination.total" type="integer">
+  Total de merchants
+</ResponseField>
+
+<ResponseField name="pagination.totalPages" type="integer">
+  Total de páginas
+</ResponseField>

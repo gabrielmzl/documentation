@@ -1,0 +1,144 @@
+---
+title: "Atualizar Merchant"
+api: "PATCH https://api.pronttus.com.br/v1/merchants/{merchantId}"
+description: "Atualiza dados de um merchant"
+---
+
+## Visão Geral
+
+Este endpoint permite atualizar informações de um merchant existente. Apenas os campos enviados serão atualizados.
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+## Parâmetros da URL
+
+<ParamField path="merchantId" type="string" required>
+  UUID do merchant
+</ParamField>
+
+## Parâmetros do Body
+
+<ParamField body="name" type="string">
+  Novo nome do merchant
+</ParamField>
+
+<ParamField body="email" type="string">
+  Novo e-mail do merchant
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Novo telefone do merchant
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X PATCH https://api.pronttus.com.br/v1/merchants/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -d '{
+    "name": "João Silva Santos",
+    "email": "joao.santos@email.com",
+    "phone": "11988888888"
+  }'
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/merchants/550e8400-e29b-41d4-a716-446655440000",
+  {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "João Silva Santos",
+      email: "joao.santos@email.com",
+      phone: "11988888888"
+    }),
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+payload = {
+    'name': 'João Silva Santos',
+    'email': 'joao.santos@email.com',
+    'phone': '11988888888'
+}
+
+response = requests.patch(
+    'https://api.pronttus.com.br/v1/merchants/550e8400-e29b-41d4-a716-446655440000',
+    headers=headers,
+    json=payload
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "merchantId": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "João Silva Santos",
+  "document": "12345678901",
+  "document_type": "CPF",
+  "email": "joao.santos@email.com",
+  "phone": "11988888888",
+  "status": "ACTIVE",
+  "updatedAt": "2025-01-15T11:00:00.000Z"
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="merchantId" type="string">
+  UUID único do merchant
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Nome atualizado do merchant
+</ResponseField>
+
+<ResponseField name="document" type="string">
+  CPF ou CNPJ do merchant (não alterável)
+</ResponseField>
+
+<ResponseField name="document_type" type="string">
+  Tipo do documento: `CPF` ou `CNPJ`
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  E-mail atualizado do merchant
+</ResponseField>
+
+<ResponseField name="phone" type="string">
+  Telefone atualizado do merchant
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status do merchant: `ACTIVE`, `INACTIVE`, `SUSPENDED`
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Data da última atualização (ISO 8601)
+</ResponseField>

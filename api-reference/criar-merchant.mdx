@@ -1,0 +1,249 @@
+---
+title: "Criar Merchant"
+api: "POST https://api.pronttus.com.br/v1/merchants"
+description: "Cria um novo merchant (subconta gráfica)"
+---
+
+## Visão Geral
+
+Este endpoint permite criar um novo merchant (subconta gráfica) para organizar recebimentos.
+
+<Info>
+  Para entender melhor o conceito de merchants e casos de uso, consulte a [documentação conceitual](/merchants).
+</Info>
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+## Parâmetros do Body
+
+<ParamField body="name" type="string" required>
+  Nome do merchant (ex: "João da Silva")
+</ParamField>
+
+<ParamField body="document" type="string" required>
+  CPF ou CNPJ do merchant (apenas números)
+</ParamField>
+
+<ParamField body="document_type" type="string" required>
+  Tipo do documento: `CPF` ou `CNPJ`
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  E-mail do merchant
+</ParamField>
+
+<ParamField body="phone" type="string" required>
+  Telefone do merchant com DDD (apenas números)
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.pronttus.com.br/v1/merchants \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -d '{
+    "name": "João da Silva",
+    "document": "12345678901",
+    "document_type": "CPF",
+    "email": "joao@email.com",
+    "phone": "11999999999"
+  }'
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/merchants",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "João da Silva",
+      document: "12345678901",
+      document_type: "CPF",
+      email: "joao@email.com",
+      phone: "11999999999"
+    }),
+  }
+);
+
+const data = await response.json();
+
+// Acessar dados do merchant criado
+const merchant = data.data.merchant;
+const walletId = data.data.wallet_id;
+const credentials = data.data.credentials;
+
+console.log('Merchant criado:', merchant.name);
+console.log('Wallet ID:', walletId);
+console.log('Client ID:', credentials.client_id);
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+payload = {
+    'name': 'João da Silva',
+    'document': '12345678901',
+    'document_type': 'CPF',
+    'email': 'joao@email.com',
+    'phone': '11999999999'
+}
+
+response = requests.post(
+    'https://api.pronttus.com.br/v1/merchants',
+    headers=headers,
+    json=payload
+)
+
+data = response.json()
+
+# Acessar dados do merchant criado
+merchant = data['data']['merchant']
+wallet_id = data['data']['wallet_id']
+credentials = data['data']['credentials']
+
+print(f'Merchant criado: {merchant["name"]}')
+print(f'Wallet ID: {wallet_id}')
+print(f'Client ID: {credentials["client_id"]}')
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "statusCode": 201,
+  "message": "Comerciante criado com sucesso",
+  "data": {
+    "merchant": {
+      "id": "063ccba0-b7bd-40fb-a0b6-67e8f9035bbc",
+      "name": "Marketplace Franquia 1",
+      "document": "18996816000182",
+      "document_type": "CNPJ",
+      "email": "franquia@gmail.com",
+      "phone": "11992323294",
+      "status": "ACTIVE",
+      "created_at": "2025-10-16T22:07:14.494Z",
+      "updated_at": "2025-10-16T22:07:14.494Z"
+    },
+    "wallet_id": "aa2052c1-1087-421e-ac27-65380cbeb59e",
+    "credentials": {
+      "client_id": "c8abc652-92d9-4cb7-84a7-.....",
+      "client_secret": "be50d57e1d85f32fb6170....."
+    }
+  }
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="statusCode" type="integer">
+  Código de status HTTP da resposta (201)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem de sucesso da operação
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Dados do merchant criado
+</ResponseField>
+
+<ResponseField name="data.merchant" type="object">
+  Informações do merchant criado
+</ResponseField>
+
+<ResponseField name="data.merchant.id" type="string">
+  UUID único do merchant criado
+</ResponseField>
+
+<ResponseField name="data.merchant.name" type="string">
+  Nome do merchant
+</ResponseField>
+
+<ResponseField name="data.merchant.document" type="string">
+  CPF ou CNPJ do merchant
+</ResponseField>
+
+<ResponseField name="data.merchant.document_type" type="string">
+  Tipo do documento: `CPF` ou `CNPJ`
+</ResponseField>
+
+<ResponseField name="data.merchant.email" type="string">
+  E-mail do merchant
+</ResponseField>
+
+<ResponseField name="data.merchant.phone" type="string">
+  Telefone do merchant
+</ResponseField>
+
+<ResponseField name="data.merchant.status" type="string">
+  Status do merchant: `ACTIVE`, `INACTIVE`, `SUSPENDED`
+</ResponseField>
+
+<ResponseField name="data.merchant.created_at" type="string">
+  Data de criação (ISO 8601)
+</ResponseField>
+
+<ResponseField name="data.merchant.updated_at" type="string">
+  Data da última atualização (ISO 8601)
+</ResponseField>
+
+<ResponseField name="data.wallet_id" type="string">
+  UUID da wallet principal criada para o merchant
+</ResponseField>
+
+<ResponseField name="data.credentials" type="object">
+  Credenciais de API específicas do merchant
+</ResponseField>
+
+<ResponseField name="data.credentials.client_id" type="string">
+  Client ID para autenticação do merchant
+</ResponseField>
+
+<ResponseField name="data.credentials.client_secret" type="string">
+  Client Secret para autenticação do merchant
+</ResponseField>
+
+<Warning>
+  Mantenha as credenciais do merchant em segurança. Elas são necessárias para operações específicas deste merchant.
+</Warning>
+
+## Informações Importantes
+
+### Wallet ID
+O `wallet_id` retornado é o identificador da carteira principal do merchant. Este ID é usado para:
+- Configurar splits nas transações
+- Consultar saldo específico da wallet
+- Realizar transferências para/da wallet
+
+### Credenciais do Merchant
+Cada merchant criado recebe suas próprias credenciais de API:
+- **client_id**: Identificador único do merchant
+- **client_secret**: Chave secreta para autenticação
+
+<Info>
+  As credenciais do merchant são diferentes das credenciais da conta principal e devem ser usadas para operações específicas deste merchant.
+</Info>
+
+### Status do Merchant
+O merchant é criado com status `ACTIVE` por padrão, permitindo:
+- Receber splits de transações
+- Realizar operações normalmente
+- Acessar sua wallet

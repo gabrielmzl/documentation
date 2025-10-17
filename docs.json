@@ -36,6 +36,12 @@
               "webhooks/introducao",
               "webhooks/tipos-webhooks"
             ]
+          },
+          {
+            "group": "Merchants",
+            "pages": [
+              "merchants"
+            ]
           }
         ]
       },
@@ -58,6 +64,17 @@
             "group": "Transferências",
             "pages": [
               "api-reference/criar-transferencia"
+            ]
+          },
+          {
+            "group": "Merchants",
+            "pages": [
+              "api-reference/criar-merchant",
+              "api-reference/listar-merchants",
+              "api-reference/detalhar-merchant",
+              "api-reference/atualizar-merchant",
+              "api-reference/saldo-merchants",
+              "api-reference/exemplo-marketplace-split"
             ]
           }
         ]

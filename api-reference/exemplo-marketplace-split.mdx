@@ -1,0 +1,110 @@
+---
+title: "Exemplo: Marketplace com Split"
+description: "Como implementar split de transações em um marketplace"
+---
+
+## Cenário: Marketplace de Produtos
+
+Imagine que você tem um marketplace onde vendedores vendem produtos e você cobra uma comissão. Vamos ver como implementar isso usando merchants e split.
+
+## Estrutura do Sistema
+
+### 1. Criar Merchants para Vendedores
+
+```bash cURL
+# Criar merchant para o vendedor João
+curl -X POST https://api.pronttus.com.br/v1/merchants \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token" \
+  -d '{
+    "name": "João Silva - Vendedor",
+    "document": "12345678901",
+    "document_type": "CPF",
+    "email": "joao@marketplace.com",
+    "phone": "11999999999"
+  }'
+```
+
+## Implementação da Venda
+
+### Exemplo de Venda com Split
+
+Quando um cliente compra um produto de R$ 100,00:
+
+```javascript JavaScript
+// Dados da venda
+const saleData = {
+  amount: 10000, // R$ 100,00 em centavos
+  description: "Produto: Smartphone XYZ",
+  customer: {
+    name: "Maria Santos",
+    document: "98765432100",
+    email: "maria@email.com",
+    phone: "11977777777",
+  },
+  externalId: "SALE_12345",
+  split: {
+    amount: 8500, // R$ 85,00 para o vendedor (85%)
+    mode: "PERCENTAGE",
+    wallet_id: "wallet-joao-vendedor",
+  },
+};
+
+// Criar cobrança PIX
+const response = await fetch(
+  "https://api.pronttus.com.br/v1/banking/cash-in/pix",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(saleData),
+  }
+);
+
+const result = await response.json();
+```
+
+### Resultado da Transação
+
+Após o pagamento ser confirmado:
+
+- **Vendedor João**: Recebe R$ 85,00 na sua wallet
+- **Marketplace**: Recebe R$ 15,00 de comissão
+- **Total**: R$ 100,00 (valor da venda)
+
+## Boas Práticas
+
+### 1. Validação de Split
+
+- Sempre valide se a soma dos splits não excede o valor total
+- Verifique se os wallet_ids existem antes de criar a transação
+- Implemente fallback para casos de erro
+
+### 2. Monitoramento
+
+- Configure alertas para splits que falharam
+- Monitore saldos das wallets regularmente
+- Mantenha logs detalhados das transações
+
+### 3. Segurança
+
+- Nunca exponha wallet_ids em logs públicos
+- Use HTTPS para todas as requisições
+- Implemente rate limiting nas suas APIs
+
+## Próximos Passos
+
+<CardGroup cols={2}>
+  <Card title="Webhooks" icon="webhook" href="/webhooks/introducao">
+    Configure notificações automáticas
+  </Card>
+  <Card
+    title="Transferências"
+    icon="exchange"
+    href="/api-reference/criar-transferencia"
+  >
+    Saque valores das wallets
+  </Card>
+</CardGroup>

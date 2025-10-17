@@ -1,0 +1,125 @@
+---
+title: "Obter Saldo do Merchant"
+api: "GET https://api.pronttus.com.br/v1/merchants/balance"
+description: "Obtém o saldo atual do merchant autenticado"
+---
+
+## Visão Geral
+
+Este endpoint permite obter o saldo atual do merchant autenticado. O saldo é retornado em centavos e representa o valor disponível na wallet principal do merchant.
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.pronttus.com.br/v1/merchants/balance \
+  -H "Authorization: Bearer seu_token"
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/merchants/balance",
+  {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  }
+);
+
+const data = await response.json();
+
+// Acessar saldo do merchant
+const balanceInCents = data.data.balance;
+const balanceInReais = balanceInCents / 100;
+
+console.log(`Saldo: R$ ${balanceInReais.toFixed(2)}`);
+console.log(`Saldo em centavos: ${balanceInCents}`);
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.pronttus.com.br/v1/merchants/balance',
+    headers=headers
+)
+
+data = response.json()
+
+# Acessar saldo do merchant
+balance_in_cents = data['data']['balance']
+balance_in_reais = balance_in_cents / 100
+
+print(f'Saldo: R$ {balance_in_reais:.2f}')
+print(f'Saldo em centavos: {balance_in_cents}')
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "statusCode": 200,
+  "message": "Saldo do comerciante encontrado com sucesso",
+  "data": {
+    "balance": 2450
+  }
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="statusCode" type="integer">
+  Código de status HTTP da resposta (200)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem de sucesso da operação
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Dados do saldo do merchant
+</ResponseField>
+
+<ResponseField name="data.balance" type="integer">
+  Saldo do merchant em centavos (2450 = R$ 24,50)
+</ResponseField>
+
+<Note>
+  O valor do saldo é retornado em centavos. Para converter para reais, divida por 100.
+</Note>
+
+## Como Usar o Saldo
+
+### Conversão de Centavos para Reais
+```javascript
+const balanceInCents = 2450; // Resposta da API
+const balanceInReais = balanceInCents / 100; // R$ 24,50
+```
+
+### Verificação de Saldo Disponível
+Use este endpoint para verificar se há saldo suficiente antes de:
+- Realizar transferências
+- Processar saques
+- Validar operações que dependem do saldo
+
+### Monitoramento de Recebimentos
+O saldo aumenta automaticamente quando:
+- Transações com split são pagas
+- Transferências são recebidas na wallet do merchant
+- Outros merchants fazem transferências para esta wallet
