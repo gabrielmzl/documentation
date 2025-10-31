@@ -19,7 +19,7 @@ Todos os webhooks seguem esta estrutura base:
 ```json
 {
   "webhook_id": "string",
-  "event": "transactions.credit | transactions.debit",
+  "event": "transactions.credit | transactions.debit | transactions.refunded",
   "data": {
     // Dados específicos do evento
   }
@@ -108,6 +108,67 @@ Este evento é disparado quando há um **recebimento via PIX** na sua conta. O p
 
 <Tip>
   **Use este evento** para liberar produtos, enviar e-mails de confirmação, atualizar status de pedidos, etc.
+</Tip>
+
+---
+
+## Reembolso (Refund)
+
+### `transactions.refunded`
+
+Evento de **reembolso** de uma transação PIX previamente realizada. Indica que o valor foi devolvido ao pagador.
+
+### Exemplo de Payload - Sucesso
+
+```json
+{
+  "webhook_id": "ac4db6f2cde84c3c6a563ccbfb120ac8554dadb339c1b67f29e186973ac0b94d",
+  "event": "transactions.refunded",
+  "data": {
+    "id": "3e02ee0e-2ec5-41d2-bae0-0c3d2bab8985",
+    "status": "REFUNDED",
+    "amount": 1999,
+    "currency_code": "BRL",
+    "method": "pix",
+    "operation": "pix.refund",
+    "pix": {
+      "end_to_end_id": "D487561212025103020598IPTgNEbVkO"
+    },
+    "receiver": {
+      "name": "John Doe",
+      "document": "12345678910",
+      "ispb": "00000001",
+      "account_number": "00000000000000000000",
+      "account_type": "00000000000000000000"
+    }
+  }
+}
+```
+
+### Campos do Payload
+
+<ParamField path="event" type="string">
+  Sempre `transactions.refunded` para reembolsos
+</ParamField>
+
+<ParamField path="data.status" type="string">
+  Status do reembolso: `REFUNDED`
+</ParamField>
+
+<ParamField path="data.operation" type="string">
+  Tipo de operação: `pix.refund`
+</ParamField>
+
+<ParamField path="data.pix.end_to_end_id" type="string">
+  ID fim-a-fim do PIX associado ao reembolso
+</ParamField>
+
+<ParamField path="data.receiver" type="object">
+  Dados do destinatário da devolução (nome, documento, ISPB, conta)
+</ParamField>
+
+<Tip>
+  Use este evento para atualizar o status do pedido, estornar comissões e notificar o cliente sobre o reembolso.
 </Tip>
 
 ---
