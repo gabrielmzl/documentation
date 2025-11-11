@@ -22,8 +22,9 @@ Este endpoint permite criar uma transferência PIX para qualquer chave PIX cadas
 </ParamField>
 
 <ParamField header="x-idempotency-key" type="string" required>
-  Código único de idempotência (UUID) para evitar transferências duplicadas
-  **Importante:** Use um UUID único para cada operação
+  Código único de idempotência para evitar transferências duplicadas
+  
+  **Importante:** Deve ser um UUID válido no formato `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`. Use um UUID único para cada operação.
 </ParamField>
 
 ## Parâmetros do Body
