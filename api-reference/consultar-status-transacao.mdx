@@ -9,7 +9,8 @@ description: "Consulta o status e detalhes de uma transação específica"
 Este endpoint permite consultar o status e os detalhes de uma transação específica, incluindo informações sobre pagamentos, saques e transferências. O endpoint retorna diferentes informações dependendo do status e tipo da transação.
 
 <Info>
-  Use este endpoint para verificar o status de transações criadas anteriormente, seja para recebimentos (PIX) ou saques/transferências.
+  Use este endpoint para verificar o status de transações criadas anteriormente,
+  seja para recebimentos (PIX) ou saques/transferências.
 </Info>
 
 ## Autenticação
@@ -41,7 +42,7 @@ const response = await api.makeRequest(
   `https://api.pronttus.com.br/v1/banking/transactions/${transactionId}`,
   {
     method: "GET",
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json" },
   }
 );
 
@@ -86,14 +87,14 @@ if data['data']['status'] == 'COMPLETED':
   "statusCode": 200,
   "message": "Transação encontrada com sucesso",
   "data": {
-    "id": "637b1c49-b7e7-40ac-8cba-7f1fbf5cd32c",
+    "id": "637b1c49-b7e7-40ac-8cba-7f1fbf5cd222",
     "status": "COMPLETED",
-    "end_to_end_id": "E3030629420251021001900000043K7p",
+    "end_to_end_id": "E3030629420251021001900000043Kcp",
     "payer": {
-      "name": "Gabriel Faria Gentil",
-      "document": "42446021867",
+      "name": "João Almeida",
+      "document": "12345678910",
       "ispb": "30306294",
-      "account_number": "9006556",
+      "account_number": "1206552",
       "account_type": "0"
     }
   }
@@ -132,15 +133,15 @@ if data['data']['status'] == 'COMPLETED':
   "statusCode": 200,
   "message": "Transação encontrada com sucesso",
   "data": {
-    "id": "0fda5e93-8edb-47fd-866e-673553f049dc",
+    "id": "0fda5e93-8edb-47fd-866e-673553f049cc",
     "status": "COMPLETED",
-    "end_to_end_id": "E48756121202511111916MIoObSJZyUe",
+    "end_to_end_id": "E48756121202511111916MIoObSJZySe",
     "receiver": {
-      "name": "Gabriel Faria Gentil",
-      "document": "42446021867",
-      "ispb": "18236120",
-      "account_number": "626617853",
-      "account_type": "3"
+      "name": "João Almeida",
+      "document": "12345678910",
+      "ispb": "30306294",
+      "account_number": "1206552",
+      "account_type": "0"
     }
   }
 }
@@ -167,37 +168,35 @@ if data['data']['status'] == 'COMPLETED':
 </ResponseField>
 
 <ResponseField name="data.status" type="string">
-  Status da transação. Valores possíveis:
-  - `COMPLETED`: Transação concluída com sucesso
-  - `WAITING_PAYMENT`: Aguardando pagamento (para recebimentos)
-  - `FAILED`: Transação falhou
-  - `PROCESSING`: Transação em processamento
+  Status da transação. Valores possíveis: - `COMPLETED`: Transação concluída com
+  sucesso - `WAITING_PAYMENT`: Aguardando pagamento (para recebimentos) -
+  `FAILED`: Transação falhou - `PROCESSING`: Transação em processamento
 </ResponseField>
 
 <ResponseField name="data.end_to_end_id" type="string">
-  ID fim-a-fim do PIX (identificador único do Banco Central). Presente apenas quando `status` é `COMPLETED` e a transação foi processada com sucesso.
+  ID fim-a-fim do PIX (identificador único do Banco Central). Presente apenas
+  quando `status` é `COMPLETED` e a transação foi processada com sucesso.
 </ResponseField>
 
 <ResponseField name="data.payer" type="object">
   Dados do pagador. Presente apenas em transações de recebimento (`COMPLETED`).
-  
   <Expandable title="Campos do payer">
     <ResponseField name="data.payer.name" type="string">
       Nome completo do pagador
     </ResponseField>
-    
+
     <ResponseField name="data.payer.document" type="string">
       CPF ou CNPJ do pagador (apenas números)
     </ResponseField>
-    
+
     <ResponseField name="data.payer.ispb" type="string">
       Código ISPB do banco do pagador
     </ResponseField>
-    
+
     <ResponseField name="data.payer.account_number" type="string">
       Número da conta do pagador
     </ResponseField>
-    
+
     <ResponseField name="data.payer.account_type" type="string">
       Tipo de conta do pagador (0 = Conta Corrente, 1 = Poupança, etc.)
     </ResponseField>
@@ -205,43 +204,43 @@ if data['data']['status'] == 'COMPLETED':
 </ResponseField>
 
 <ResponseField name="data.receiver" type="object">
-  Dados do recebedor. Presente apenas em transações de saque/transferência (`COMPLETED`).
-  
+  Dados do recebedor. Presente apenas em transações de saque/transferência
+  (`COMPLETED`).
   <Expandable title="Campos do receiver">
     <ResponseField name="data.receiver.name" type="string">
       Nome completo do recebedor
     </ResponseField>
-    
+
     <ResponseField name="data.receiver.document" type="string">
       CPF ou CNPJ do recebedor (apenas números)
     </ResponseField>
-    
+
     <ResponseField name="data.receiver.ispb" type="string">
       Código ISPB do banco do recebedor
     </ResponseField>
-    
+
     <ResponseField name="data.receiver.account_number" type="string">
       Número da conta do recebedor
     </ResponseField>
-    
+
     <ResponseField name="data.receiver.account_type" type="string">
-      Tipo de conta do recebedor (0 = Conta Corrente, 1 = Poupança, 3 = Outros, etc.)
+      Tipo de conta do recebedor (0 = Conta Corrente, 1 = Poupança, 3 = Outros,
+      etc.)
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <ResponseField name="data.error" type="object">
   Detalhes do erro. Presente apenas quando `status` é `FAILED`.
-  
   <Expandable title="Campos do error">
     <ResponseField name="data.error.code" type="string">
       Código do erro
     </ResponseField>
-    
+
     <ResponseField name="data.error.origin" type="string">
       Origem do erro (ex: "Sistema", "Banco", etc.)
     </ResponseField>
-    
+
     <ResponseField name="data.error.message" type="string">
       Mensagem descritiva do erro
     </ResponseField>
@@ -251,18 +250,23 @@ if data['data']['status'] == 'COMPLETED':
 ## Status da Transação
 
 ### COMPLETED
+
 Transação concluída com sucesso. Para recebimentos, inclui dados do `payer`. Para saques/transferências, inclui dados do `receiver` e `end_to_end_id`.
 
 ### WAITING_PAYMENT
+
 Transação de recebimento aguardando pagamento. Apenas o `id` e `status` são retornados.
 
 ### FAILED
+
 Transação falhou. Inclui objeto `error` com detalhes sobre o problema.
 
 ### PROCESSING
+
 Transação em processamento. Geralmente ocorre em saques/transferências que ainda estão sendo processados.
 
 <Tip>
-  **Recomendação:** Configure webhooks para receber notificações automáticas sobre mudanças de status, evitando a necessidade de consultar constantemente o status da transação.
+  **Recomendação:** Configure webhooks para receber notificações automáticas
+  sobre mudanças de status, evitando a necessidade de consultar constantemente o
+  status da transação.
 </Tip>
-
