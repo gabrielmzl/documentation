@@ -1,0 +1,130 @@
+---
+title: "Verificar Saldo"
+api: "GET https://api.pronttus.com.br/v1/banking/balance"
+description: "Obtém o saldo atual da conta bancária"
+---
+
+## Visão Geral
+
+Este endpoint permite verificar o saldo atual da conta bancária. O saldo é retornado em centavos e representa o valor disponível na conta.
+
+<Info>
+  O saldo é atualizado em tempo real e reflete todas as transações realizadas, incluindo recebimentos, transferências e saques.
+</Info>
+
+## Autenticação
+
+<ParamField header="Authorization" type="string" required>
+  Token Bearer obtido no endpoint de autenticação ``` Bearer
+  eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp... ```
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.pronttus.com.br/v1/banking/balance \
+  -H "Authorization: Bearer seu_token"
+```
+
+```javascript JavaScript
+const api = new PronttusAPI(clientId, clientSecret);
+
+const response = await api.makeRequest(
+  "https://api.pronttus.com.br/v1/banking/balance",
+  {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  }
+);
+
+const data = await response.json();
+
+// Acessar saldo
+const balanceInCents = data.data.balance;
+const balanceInReais = balanceInCents / 100;
+
+console.log(`Saldo: R$ ${balanceInReais.toFixed(2)}`);
+console.log(`Saldo em centavos: ${balanceInCents}`);
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': f'Bearer {token}',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get(
+    'https://api.pronttus.com.br/v1/banking/balance',
+    headers=headers
+)
+
+data = response.json()
+
+# Acessar saldo
+balance_in_cents = data['data']['balance']
+balance_in_reais = balance_in_cents / 100
+
+print(f'Saldo: R$ {balance_in_reais:.2f}')
+print(f'Saldo em centavos: {balance_in_cents}')
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Resposta de Sucesso
+{
+  "statusCode": 200,
+  "message": "Saldo da conta encontrado com sucesso.",
+  "data": {
+    "balance": 2493
+  }
+}
+```
+
+</ResponseExample>
+
+## Campos da Resposta
+
+<ResponseField name="statusCode" type="integer">
+  Código de status HTTP da resposta (200)
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Mensagem de sucesso da operação
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Dados do saldo da conta
+</ResponseField>
+
+<ResponseField name="data.balance" type="integer">
+  Saldo da conta em centavos (2493 = R$ 24,93)
+</ResponseField>
+
+<Note>
+  O valor do saldo é retornado em centavos. Para converter para reais, divida por 100.
+</Note>
+
+## Como Usar o Saldo
+
+### Conversão de Centavos para Reais
+```javascript
+const balanceInCents = 2493; // Resposta da API
+const balanceInReais = balanceInCents / 100; // R$ 24,93
+```
+
+### Verificação de Saldo Disponível
+Use este endpoint para verificar se há saldo suficiente antes de:
+- Realizar transferências
+- Processar saques
+- Validar operações que dependem do saldo
+
+### Monitoramento de Recebimentos
+O saldo aumenta automaticamente quando:
+- Transações PIX são pagas
+- Transferências são recebidas na conta
+- Outras operações de crédito são processadas
+

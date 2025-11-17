@@ -67,6 +67,13 @@
             ]
           },
           {
+            "group": "Conta Bancária",
+            "pages": [
+              "api-reference/verificar-saldo",
+              "api-reference/consultar-status-transacao"
+            ]
+          },
+          {
             "group": "Merchants",
             "pages": [
               "api-reference/criar-merchant",
